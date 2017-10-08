@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?><project-modules id="moduleCoreId" project-version="1.5.0">
+    <wb-module deploy-name="WikiProjectIntegration">
+        <wb-resource deploy-path="/" source-path="/WebContent" tag="defaultRootSource"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
+        <property name="context-root" value="WikiProjectIntegration"/>
+        <property name="java-output-path" value="/WikiProjectIntegration/build/classes"/>
+    </wb-module>
+</project-modules>

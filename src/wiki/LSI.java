@@ -1,0 +1,237 @@
+package wiki;
+import java.util.*;
+
+import Jama.*;
+import Jama.util.*;
+
+
+
+public class LSI  {
+      static ArrayList<String> termList = new ArrayList<String>();
+      Matrix docSigma;
+      Matrix wordSigma;
+      Matrix test;
+      
+      public LSI(Matrix matrix, ArrayList<String> termList){
+    	 // this.addTerm();
+    	  this.termList = termList;
+    	  this.singleValueDecomposition(matrix);
+      }
+      
+     
+
+	/*
+       * 
+       */
+	  private void singleValueDecomposition( Matrix matrix ) {
+		  
+		  
+	    // phase 1: Singular value decomposition
+	    SingularValueDecomposition svd = new SingularValueDecomposition( matrix );
+	    
+	    Matrix wordVector = svd.getU();
+	    
+	    Matrix sigma = svd.getS();
+	    
+	    Matrix documentVector = svd.getV();
+	    
+	    // compute the value of k (ie where to truncate)
+	    int k = (int) Math.floor(Math.sqrt(matrix.getColumnDimension()));
+	    if( k < 2 ){ 
+	    	k = 2;
+	    }
+	    System.out.println("Tuning Parameter k: " + k);
+	    Matrix reducedWordVector = wordVector.getMatrix(0, wordVector.getRowDimension() - 1, 0, k - 1);
+	    double[][] s = reducedWordVector.getArray();
+	    //System.out.println("S");
+//	    for( int a = 0; a < s.length; a++ ){
+//			  System.out.println(Arrays.toString(s[a]) + "\n");
+//		}
+//	    System.out.println();
+	    
+	    Matrix reducedSigma = sigma.getMatrix(0, k - 1, 0, k - 1);
+	    
+	    double[][] sig = reducedSigma.getArray();
+	    //System.out.println("Sigma");
+//	    for( int b = 0; b < sig.length; b++ ){
+//			  System.out.println(Arrays.toString(sig[b]) + "\n");
+//		}
+//	    System.out.println();
+	    
+	    Matrix reducedDocumentVector = documentVector.getMatrix(
+	                                           0, documentVector.getRowDimension() - 1, 0, k - 1);
+	    
+	    double[][] u = reducedDocumentVector.transpose().getArray();
+	   // System.out.println("U");
+//	    for( int c = 0; c < u.length; c++ ){
+//			  System.out.println(Arrays.toString(u[c]) + "\n");
+//		}
+//	    System.out.println();
+	    
+	    
+	    ///////////////////
+	    wordSigma = reducedWordVector.times(reducedSigma);
+	    
+	    double[][] w = wordSigma.getArray();
+	    //System.out.println("WORD times sigma");
+//	    for( int d = 0; d < w.length; d++ ){
+//			  System.out.println(Arrays.toString(w[d]) + "\n");
+//		}
+//	    System.out.println();
+	    
+	    ////////////////////////////////////////
+	    docSigma = reducedDocumentVector.times(reducedSigma);
+	    
+	    
+	    double[][] w1 = docSigma.getArray();
+//	    System.out.println("Sigma: " + Arrays.toString(w1));
+//	    System.out.println("DOC times sigma");
+//	    for( int e = 0; e< w1.length; e++ ){
+//			  System.out.println(Arrays.toString(w1[e]) + "\n");
+//		}
+//	    System.out.println();
+	    
+//	    Matrix weights = reducedWordVector.times(
+//	                                reducedSigma).times(reducedDocumentVector.transpose());
+//	    
+//	    // Phase 2: normalize the word scrores for a single document
+//	    for (int j = 0; j < weights.getColumnDimension(); j++) {
+//	    	
+//	      double sum = sum(weights.getMatrix(
+//	        0, weights.getRowDimension() - 1, j, j));
+//	      
+//	      for (int i = 0; i < weights.getRowDimension(); i++) {
+//	        weights.set(i, j, Math.abs((weights.get(i, j)) / sum));
+//	      }
+//	    }
+	   
+//	    return weights;
+	    
+	  }
+	  
+
+	  
+	  // query vector
+	  public HashMap<Integer, Double> queryVector(String[] arr){
+		  
+		//  System.out.println(termList);
+		  
+//		  Matrix mat = new Matrix(0,0);
+		  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		  Matrix mat = new Matrix(1,2);
+		  
+		  for( int i = 0; i < arr.length; i++ ){
+			  
+			  if( termList.contains(arr[i])){
+				  int row = termList.indexOf(arr[i]);
+				  //System.out.println("row: "  + row);
+				  
+				  /////////////////////////////////////////////////////////////////////
+				  Matrix queryV = wordSigma.getMatrix(row, row, 0, wordSigma.getColumnDimension()-1);
+//				  Matrix queryV = wordSigma.getMatrix(row, row, 0, 1);
+				  //double[][] w1 = queryM.getArray();
+				  
+//					System.out.println(arr[i]);
+//					for( int e = 0; e < w1.length; e++ ){
+//						  System.out.println(Arrays.toString( w1[e]) + "\n" );
+//					}
+//					System.out.println();
+				  if( i == 0 ){
+					  mat = queryV;
+				  }
+				  else{
+					  mat = mat.plus( queryV );
+				  }
+				  //double[][] w2 = mat.getArray();
+				  
+//					System.out.println("after plus ");
+//					for( int e = 0; e < w2.length; e++ ){
+//						  System.out.println(Arrays.toString( w2[e]) + "\n" );
+//					}
+//					System.out.println();
+				  
+			  }
+			 
+		  }// for
+		  
+		  //double d = Math.round(1/arr.length) / ;
+		  mat = mat.times( 0.5 );
+		  
+//		  double[][] w1 = mat.getArray();
+//		  
+//			System.out.println("term query vector");
+//			for( int e = 0; e < w1.length; e++ ){
+//				  System.out.println(Arrays.toString( w1[e]) + "\n" );
+//			}
+//			System.out.println();
+		return this.cosineDistance(mat);
+		  
+	  }
+	  
+	  private HashMap<Integer, Double> cosineDistance( Matrix queryV){
+		  
+		  double [] scores = new double [docSigma.getRowDimension()];
+		  
+		  for( int i = 0; i < docSigma.getRowDimension(); i++ ){
+			  
+			  /////////////////////////////////////////////////////////////////////////////////////////
+			 Matrix queryM = docSigma.getMatrix(i, i, 0, docSigma.getColumnDimension()-1);
+			  //Matrix queryM = docSigma.getMatrix(i, i, 0, 1);
+			 // double result = dot( queryM, queryV );
+//			  double magnitudeQuery = Math.pow( queryV.get(0,0), 2)+ Math.pow(queryV.get(0,1), 2);
+//			  
+//			  double magnitudeQ = Math.sqrt(magnitudeQuery);
+			  double magnitudeQ = magnitude(queryV.getArray()[0]);
+			  
+			  
+//			  double magnitudeDocument = Math.pow( queryM.get(0,0), 2)+ Math.pow(queryM.get(0,1), 2);
+//			  
+//			  double magnitudeD = Math.sqrt(magnitudeDocument);
+			  double magnitudeD = magnitude(queryM.getArray()[0]);
+			  
+			 // System.out.println("Doc id: " + i + " Magnitude: " + magnitudeD);
+			  
+//			 scores[i]=(( ( ( queryV.get(0,0) * queryM.get(0,0) ) +
+//					 (queryV.get(0,1) * queryM.get(0,1) ) ) /
+//					 ( magnitudeQ * magnitudeD) ));
+			 
+			 scores[i]= dotProduct(queryV.getArray()[0],queryM.getArray()[0])/
+					 (magnitudeQ * magnitudeD);
+			 
+			  
+		  }
+		  //System.out.println(Arrays.toString(scores));
+		  HashMap<Integer, Double> queryResult = new HashMap<>();
+		  for( int x = 0; x < scores.length; x ++ ){
+			  //System.out.println(x + ":" + scores[x]);
+			  queryResult.put(x, scores[x]);
+		  }
+		return queryResult;
+		  
+	  }
+	  
+	  private double dotProduct(double [] a, double [] b){
+		  
+		  double c = 0.0;
+		  for( int i = 0; i < a.length; i++ ){
+			  c += ( a[i] * b[i]);
+		  }
+		  
+		  return c;
+		  
+	  }
+	  
+	  private double magnitude( double [] pos ){
+		  
+		  double acc = 0.0;
+		  
+		  for( int i = 0; i < pos.length; i++ ){
+			  acc += Math.pow( pos[i], 2);
+		  }
+		  
+		  return Math.sqrt(acc);
+		  
+	  }
+	  
+
+}

@@ -1,0 +1,29 @@
+body
+{
+background-color:#d0e4fe;
+}
+
+p
+{
+font-family:"vedanta";
+font-size:20px;
+
+}
+
+.bold {
+  font-weight:bold;
+}
+.center 
+{ margin: 0 auto; width: 400px; }
+
+.centered-thing {
+    position: absolute;
+    margin: auto;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+mainBody{
+	background-color: #ADD8E6;
+	border-radius:20px;
+}

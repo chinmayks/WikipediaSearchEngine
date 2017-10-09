@@ -1,6 +1,7 @@
 # WikipediaSearchEngine
 Semantic based search engine using Wikipedia dumps.
 Data Set- https://dumps.wikimedia.org/enwiki/20170220/
+Code walk through Demo: https://youtu.be/eWeX0JO9He0
 
 The search engine on Wikipedia first matches users’ queries with the content of
 Wikipedia pages using keyword match by Vector Space Model and relevancy by Cosine Similarity. If there is no document with the same subject as the query, the system
